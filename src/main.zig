@@ -1,46 +1,28 @@
 const rl = @import("raylib");
 const std = @import("std");
+const pieces = @import("pieces.zig");
+const st = @import("stage.zig");
+const Piece = pieces.Piece;
+const PieceType = pieces.PieceType;
 
-const BlockType = enum { Empty, I, J, L, O, S, T, Z };
+const cellSize = 25;
+const verticalCellCount: comptime_int = 24;
+const horizontalCellCount: comptime_int = 10;
+const topAreaHeight: comptime_int = 150;
+const PlayStage = st.stage(verticalCellCount, horizontalCellCount, cellSize);
+const PreStage = st.stage(4, 4, cellSize);
+
+const screenWidth: comptime_int = horizontalCellCount * cellSize;
+const screenHeight: comptime_int = verticalCellCount * cellSize;
 
 pub fn main() !void {
     // Initialization
     //--------------------------------------------------------------------------------------
-    const screenWidth = 250;
-    const screenHeight = 700;
+    var frameCounter: u64 = 0;
+    var prevSecondsPassed: u32 = 0;
 
-    //const stage = [3][4]BlockType{
-    //    [_]BlockType{ BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty },
-    //    [_]BlockType{ BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty },
-    //    [_]BlockType{ BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty },
-    //}
-
-    const playgrid = [24][10]BlockType{
-        [_]BlockType{ BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty },
-        [_]BlockType{ BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty },
-        [_]BlockType{ BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty },
-        [_]BlockType{ BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty },
-        [_]BlockType{ BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty },
-        [_]BlockType{ BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty },
-        [_]BlockType{ BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty },
-        [_]BlockType{ BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty },
-        [_]BlockType{ BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty },
-        [_]BlockType{ BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty },
-        [_]BlockType{ BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty },
-        [_]BlockType{ BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty },
-        [_]BlockType{ BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty },
-        [_]BlockType{ BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty },
-        [_]BlockType{ BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty },
-        [_]BlockType{ BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty },
-        [_]BlockType{ BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty },
-        [_]BlockType{ BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty },
-        [_]BlockType{ BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty },
-        [_]BlockType{ BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty },
-        [_]BlockType{ BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty },
-        [_]BlockType{ BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty },
-        [_]BlockType{ BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty },
-        [_]BlockType{ BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty, BlockType.Empty },
-    };
+    var playStage = PlayStage.init(0, topAreaHeight);
+    var preStage = PreStage.init(72, 25);
 
     rl.initWindow(screenWidth, screenHeight, "Test");
     defer rl.closeWindow(); // Close window and OpenGL context
@@ -48,63 +30,30 @@ pub fn main() !void {
     rl.setTargetFPS(60); // Set our game to run at 60 frames-per-second
     //--------------------------------------------------------------------------------------
 
-    var frame_counter: u64 = 0;
-
     // Main game loop
     while (!rl.windowShouldClose()) { // Detect window close button or ESC key
         // Update
         //----------------------------------------------------------------------------------
         // TODO: Update your variables here
         //----------------------------------------------------------------------------------
-        frame_counter += 1;
+        frameCounter += 1;
+        const currentSecondsPassed = @divTrunc(frameCounter, 60);
 
+        if (currentSecondsPassed > prevSecondsPassed) {
+            preStage.setPiece(0, 0, pieces.GetRandomPiece());
+        }
         // Draw
         //----------------------------------------------------------------------------------
         rl.beginDrawing();
         defer rl.endDrawing();
         rl.clearBackground(rl.Color.black);
 
-        for (1..10) |col_idx| {
-            rl.drawLine(@intCast(col_idx * 25), 100, @intCast(col_idx * 25), screenHeight, rl.Color.light_gray);
-        }
-        for (0..24) |row_idx| {
-            rl.drawLine(0, @intCast((row_idx * 25) + 100), screenWidth, @intCast((row_idx * 25) + 100), rl.Color.light_gray);
-        }
-
-        for (playgrid, 0..) |row, row_idx| {
-            for (row, 0..) |block, col_idx| {
-                const posX: i32 = @intCast(col_idx * 25);
-                const posY: i32 = @intCast((row_idx * 25) + 100);
-
-                switch (block) {
-                    BlockType.I => {
-                        rl.drawRectangle(posX, posY, 25, 25, rl.Color.pink);
-                    },
-                    BlockType.J => {
-                        rl.drawRectangle(posX, posY, 25, 25, rl.Color.blue);
-                    },
-                    BlockType.L => {
-                        rl.drawRectangle(posX, posY, 25, 25, rl.Color.orange);
-                    },
-                    BlockType.O => {
-                        rl.drawRectangle(posX, posY, 25, 25, rl.Color.yellow);
-                    },
-                    BlockType.S => {
-                        rl.drawRectangle(posX, posY, 25, 25, rl.Color.green);
-                    },
-                    BlockType.T => {
-                        rl.drawRectangle(posX, posY, 25, 25, rl.Color.purple);
-                    },
-                    BlockType.Z => {
-                        rl.drawRectangle(posX, posY, 25, 25, rl.Color.red);
-                    },
-                    else => {},
-                }
-            }
-        }
+        preStage.drawCells();
+        preStage.drawGridLines();
+        playStage.drawGridLines();
 
         var buf: [128]u8 = undefined;
-        var buf_slice: [:0]u8 = try std.fmt.bufPrintZ(&buf, "Time: {d}", .{@divTrunc(frame_counter, 60)});
+        var buf_slice: [:0]u8 = try std.fmt.bufPrintZ(&buf, "Time: {d}", .{currentSecondsPassed});
         rl.drawText(buf_slice, 5, 5, 7, rl.Color.light_gray);
         //----------------------------------------------------------------------------------
     }
