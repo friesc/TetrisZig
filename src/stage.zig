@@ -19,8 +19,8 @@ pub fn stage(comptime inRowCount: i32, comptime inColCount: i32, comptime inCell
         cells: [inColCount * inRowCount]?PieceType = [_]?PieceType{null} ** (inColCount * inRowCount),
 
         const cellSize: i32 = inCellSize;
-        const rowCount: i32 = inRowCount;
-        const colCount: i32 = inColCount;
+        pub const rowCount: i32 = inRowCount;
+        pub const colCount: i32 = inColCount;
         const width: i32 = inColCount * inCellSize;
         const height: i32 = inRowCount * inCellSize;
         const Self = @This();
