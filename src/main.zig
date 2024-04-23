@@ -26,7 +26,12 @@ pub fn main() !void {
     var playStage = PlayStage.init(0, topAreaHeight);
     var preStage = PreStage.init(72, 25);
 
-    rl.initWindow(screenWidth, screenHeight, "Test");
+    var selectedPiece: ?Piece = null;
+    var selectedOrientation: u64 = 0;
+
+    rl.initWindow(screenWidth, screenHeight, "Tetris");
+    rl.setWindowPosition(1920, 50);
+
     defer rl.closeWindow(); // Close window and OpenGL context
 
     rl.setTargetFPS(60); // Set our game to run at 60 frames-per-second
@@ -38,18 +43,29 @@ pub fn main() !void {
         //----------------------------------------------------------------------------------
         // TODO: Update your variables here
         //----------------------------------------------------------------------------------
-        frameCounter += 1;
         const currentSecondsPassed: u64 = @divTrunc(frameCounter, 60);
 
-        if (rl.isKeyPressed(rl.KeyboardKey.key_space) or frameCounter == 1) {
-            const pieceIdx: u64 = rnd.random().uintLessThan(u64, 4);
-            const orientationIdx: u64 = rnd.random().uintLessThan(u64, 4);
-            preStage.setPiece(0, 0, orientationIdx, pieces.pieces[pieceIdx]);
+        if (rl.isKeyPressed(rl.KeyboardKey.key_n) or frameCounter == 0) {
+            const pieceIdx: u64 = rnd.random().uintLessThan(u64, pieces.pieces.len);
+            selectedPiece = pieces.pieces[pieceIdx];
+
+            selectedOrientation = rnd.random().uintLessThan(u64, 4);
+            preStage.clearStage();
+            preStage.setPiece(0, 0, selectedOrientation, selectedPiece.?);
+            playStage.setPiece(4, 0, selectedOrientation, selectedPiece.?);
+        }
+
+        if (rl.isKeyPressed(rl.KeyboardKey.key_space)) {
+            selectedOrientation = @mod(selectedOrientation + 1, 4);
+            preStage.clearStage();
+            preStage.setPiece(0, 0, selectedOrientation, selectedPiece.?);
+            playStage.setPiece(4, 0, selectedOrientation, selectedPiece.?);
         }
 
         if (currentSecondsPassed > prevSecondsPassed) {
             prevSecondsPassed = currentSecondsPassed;
         }
+
         // Draw
         //----------------------------------------------------------------------------------
         rl.beginDrawing();
@@ -57,12 +73,18 @@ pub fn main() !void {
         rl.clearBackground(rl.Color.black);
 
         preStage.drawCells();
+        playStage.drawCells();
         preStage.drawGridLines();
         playStage.drawGridLines();
 
-        var buf: [128]u8 = undefined;
-        var buf_slice: [:0]u8 = try std.fmt.bufPrintZ(&buf, "Time: {d}", .{currentSecondsPassed});
-        rl.drawText(buf_slice, 5, 5, 7, rl.Color.light_gray);
+        var time_str_buf: [128]u8 = undefined;
+        var buf_str_slice: [:0]u8 = try std.fmt.bufPrintZ(&time_str_buf, "Time: {d}", .{currentSecondsPassed});
+        rl.drawText(buf_str_slice, 5, 5, 7, rl.Color.light_gray);
+
+        var score_str_buf: [128]u8 = undefined;
+        var score_str_slice: [:0]u8 = try std.fmt.bufPrintZ(&score_str_buf, "Score: {d}", .{0});
+        rl.drawText(score_str_slice, 75, 5, 7, rl.Color.light_gray);
         //----------------------------------------------------------------------------------
+        frameCounter += 1;
     }
 }

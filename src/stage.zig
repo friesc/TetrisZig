@@ -29,11 +29,19 @@ pub fn stage(comptime inRowCount: i32, comptime inColCount: i32, comptime inCell
             return .{ .xPos = inXpos, .yPos = inYpos };
         }
 
+        pub fn clearStage(self: *Self) void {
+            for (0..self.cells.len) |idx| {
+                self.cells[idx] = null;
+            }
+        }
+
         pub fn setPiece(self: *Self, x: u32, y: u32, rotationIdx: usize, piece: Piece) void {
-            for (0..piece.layout[rotationIdx].len) |col_idx| {
-                for (0..piece.layout[rotationIdx][col_idx].len) |row_idx| {
-                    const cellIdx = (y + row_idx) * piece.layout[rotationIdx][col_idx].len + (x + col_idx);
-                    if (piece.layout[rotationIdx][col_idx][row_idx]) {
+            for (0..piece.layout[rotationIdx].len) |row_idx| {
+                for (0..piece.layout[rotationIdx][row_idx].len) |col_idx| {
+                    const cellColIdx = x + col_idx;
+                    const cellRowIdx = (y + row_idx) * (Self.colCount);
+                    const cellIdx = cellColIdx + cellRowIdx;
+                    if (piece.layout[rotationIdx][row_idx][col_idx]) {
                         self.cells[cellIdx] = piece.type;
                     } else {
                         self.cells[cellIdx] = null;
@@ -47,8 +55,8 @@ pub fn stage(comptime inRowCount: i32, comptime inColCount: i32, comptime inCell
                 if (cell) |pieceType| {
                     const piece = pieces.pieces[@intFromEnum(pieceType)];
 
-                    const colIdx = @divFloor(@as(i32, @intCast(idx)), Self.colCount);
-                    const rowIdx = @rem(@as(i32, @intCast(idx)), Self.colCount);
+                    const colIdx = @rem(@as(i32, @intCast(idx)), Self.colCount);
+                    const rowIdx = @divFloor(@as(i32, @intCast(idx)), Self.colCount);
                     const x = self.xPos + (colIdx * Self.cellSize);
                     const y = self.yPos + (rowIdx * Self.cellSize);
                     rl.drawRectangle(x, y, Self.cellSize, Self.cellSize, piece.color);
