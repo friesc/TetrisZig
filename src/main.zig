@@ -41,11 +41,13 @@ pub fn main() !void {
         frameCounter += 1;
         const currentSecondsPassed: u64 = @divTrunc(frameCounter, 60);
 
-        if (currentSecondsPassed > prevSecondsPassed) {
+        if (rl.isKeyPressed(rl.KeyboardKey.key_space) or frameCounter == 1) {
             const pieceIdx: u64 = rnd.random().uintLessThan(u64, 4);
             const orientationIdx: u64 = rnd.random().uintLessThan(u64, 4);
             preStage.setPiece(0, 0, orientationIdx, pieces.pieces[pieceIdx]);
+        }
 
+        if (currentSecondsPassed > prevSecondsPassed) {
             prevSecondsPassed = currentSecondsPassed;
         }
         // Draw
