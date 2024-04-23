@@ -4,7 +4,16 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug",
+            "name": "Debug MacOS",
+            "program": "${workspaceFolder}/zig-out/bin/TetrisZig",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "build"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug Win64",
             "program": "${workspaceFolder}/zig-out/bin/TetrisZig.exe",
             "args": [],
             "cwd": "${workspaceFolder}",
