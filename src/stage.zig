@@ -29,19 +29,14 @@ pub fn stage(comptime inRowCount: i32, comptime inColCount: i32, comptime inCell
             return .{ .xPos = inXpos, .yPos = inYpos };
         }
 
-        pub fn setPiece(self: *Self, x: u32, y: u32, piece: Piece) void {
-            _ = x;
-            _ = y;
-            const RndGen = std.rand.DefaultPrng;
-            var rnd = RndGen.init(0);
-            const layoutIdx = rnd.random().int(usize) % piece.layout.len;
-            for (0..piece.layout[layoutIdx].len) |col_idx| {
-                for (0..piece.layout[layoutIdx][col_idx].len) |row_idx| {
-                    const pieceIdx = col_idx * piece.layout[layoutIdx][col_idx].len + row_idx;
-                    if (piece.layout[layoutIdx][col_idx][row_idx]) {
-                        self.cells[pieceIdx] = piece.type;
+        pub fn setPiece(self: *Self, x: u32, y: u32, rotationIdx: usize, piece: Piece) void {
+            for (0..piece.layout[rotationIdx].len) |col_idx| {
+                for (0..piece.layout[rotationIdx][col_idx].len) |row_idx| {
+                    const cellIdx = (y + row_idx) * piece.layout[rotationIdx][col_idx].len + (x + col_idx);
+                    if (piece.layout[rotationIdx][col_idx][row_idx]) {
+                        self.cells[cellIdx] = piece.type;
                     } else {
-                        self.cells[pieceIdx] = null;
+                        self.cells[cellIdx] = null;
                     }
                 }
             }
@@ -52,8 +47,10 @@ pub fn stage(comptime inRowCount: i32, comptime inColCount: i32, comptime inCell
                 if (cell) |pieceType| {
                     const piece = pieces.pieces[@intFromEnum(pieceType)];
 
-                    const x = @rem(@as(i32, @intCast(idx)), Self.colCount);
-                    const y = @mod(@as(i32, @intCast(idx)), Self.colCount);
+                    const colIdx = @divFloor(@as(i32, @intCast(idx)), Self.colCount);
+                    const rowIdx = @rem(@as(i32, @intCast(idx)), Self.colCount);
+                    const x = self.xPos + (colIdx * Self.cellSize);
+                    const y = self.yPos + (rowIdx * Self.cellSize);
                     rl.drawRectangle(x, y, Self.cellSize, Self.cellSize, piece.color);
                 }
             }

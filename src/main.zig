@@ -4,6 +4,7 @@ const pieces = @import("pieces.zig");
 const st = @import("stage.zig");
 const Piece = pieces.Piece;
 const PieceType = pieces.PieceType;
+const Rnd = std.rand.Xoshiro256;
 
 const cellSize = 25;
 const verticalCellCount: comptime_int = 24;
@@ -18,8 +19,9 @@ const screenHeight: comptime_int = verticalCellCount * cellSize;
 pub fn main() !void {
     // Initialization
     //--------------------------------------------------------------------------------------
+    var rnd: Rnd = std.rand.DefaultPrng.init(@as(u64, @bitCast(std.time.milliTimestamp())));
     var frameCounter: u64 = 0;
-    var prevSecondsPassed: u32 = 0;
+    var prevSecondsPassed: u64 = 0;
 
     var playStage = PlayStage.init(0, topAreaHeight);
     var preStage = PreStage.init(72, 25);
@@ -37,10 +39,14 @@ pub fn main() !void {
         // TODO: Update your variables here
         //----------------------------------------------------------------------------------
         frameCounter += 1;
-        const currentSecondsPassed = @divTrunc(frameCounter, 60);
+        const currentSecondsPassed: u64 = @divTrunc(frameCounter, 60);
 
         if (currentSecondsPassed > prevSecondsPassed) {
-            preStage.setPiece(0, 0, pieces.GetRandomPiece());
+            const pieceIdx: u64 = rnd.random().uintLessThan(u64, 4);
+            const orientationIdx: u64 = rnd.random().uintLessThan(u64, 4);
+            preStage.setPiece(0, 0, orientationIdx, pieces.pieces[pieceIdx]);
+
+            prevSecondsPassed = currentSecondsPassed;
         }
         // Draw
         //----------------------------------------------------------------------------------

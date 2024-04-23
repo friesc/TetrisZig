@@ -227,7 +227,7 @@ pub const pieces = [_]Piece{
 
 pub fn GetRandomPiece() Piece {
     const RndGen = std.rand.DefaultPrng;
-    var rnd = RndGen.init(0);
+    var rnd = RndGen.init(@as(u64, @bitCast(std.time.milliTimestamp())));
     const idx = rnd.random().int(usize) % pieces.len;
     return pieces[idx];
 }
