@@ -30,7 +30,7 @@ pub fn main() !void {
     var selectedOrientation: u64 = 0;
 
     rl.initWindow(screenWidth, screenHeight, "Tetris");
-    rl.setWindowPosition(1920, 50);
+    rl.setWindowPosition(100, 100);
 
     defer rl.closeWindow(); // Close window and OpenGL context
 
