@@ -11,7 +11,7 @@
             "preLaunchTask": "build"
         },
         {
-            "type": "lldb",
+            "type": "cppvsdbg",
             "request": "launch",
             "name": "Debug Win64",
             "program": "${workspaceFolder}/zig-out/bin/TetrisZig.exe",
