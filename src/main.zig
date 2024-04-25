@@ -19,17 +19,9 @@ const screenHeight: comptime_int = topAreaHeight + verticalCellCount * cellSize;
 pub fn main() !void {
     // Initialization
     //--------------------------------------------------------------------------------------
-    var rnd: Rnd = std.rand.DefaultPrng.init(@as(u64, @bitCast(std.time.milliTimestamp())));
     var frameCounter: u64 = 0;
-    var prevSecondsPassed: u64 = 0;
 
     var playStage = PlayStage.init(0, topAreaHeight);
-    var preStage = PreStage.init(72, 25);
-
-    var selectedPiece: ?Piece = null;
-    var selectedOrientation: u64 = 0;
-    var selectedColIndex: u32 = 0;
-    var currentRowIndex: u32 = 0;
 
     rl.initWindow(screenWidth, screenHeight, "Tetris");
     rl.setWindowPosition(100, 100);
@@ -46,45 +38,7 @@ pub fn main() !void {
         // TODO: Update your variables here
         //----------------------------------------------------------------------------------
         const currentSecondsPassed: u64 = @divTrunc(frameCounter, 60);
-
-        if (rl.isKeyPressed(rl.KeyboardKey.key_n) or frameCounter == 0) {
-            const pieceIdx: u64 = rnd.random().uintLessThan(u64, pieces.pieces.len);
-            selectedPiece = pieces.pieces[pieceIdx];
-
-            selectedColIndex = 3;
-            selectedOrientation = rnd.random().uintLessThan(u64, selectedPiece.?.layout.len);
-            preStage.clearStage();
-            preStage.setPiece(0, 0, selectedOrientation, selectedPiece.?);
-            playStage.setPiece(selectedColIndex, currentRowIndex, selectedOrientation, selectedPiece.?);
-        }
-
-        if (rl.isKeyPressed(rl.KeyboardKey.key_space)) {
-            selectedOrientation = @mod(selectedOrientation + 1, selectedPiece.?.layout.len);
-            preStage.clearStage();
-            preStage.setPiece(0, 0, selectedOrientation, selectedPiece.?);
-            playStage.setPiece(selectedColIndex, currentRowIndex, selectedOrientation, selectedPiece.?);
-        }
-
-        if (rl.isKeyPressed(rl.KeyboardKey.key_right) and selectedColIndex < PlayStage.colCount - 4) {
-            selectedColIndex = selectedColIndex + 1;
-            playStage.clearStage();
-            playStage.setPiece(selectedColIndex, currentRowIndex, selectedOrientation, selectedPiece.?);
-        }
-        if (rl.isKeyPressed(rl.KeyboardKey.key_left) and selectedColIndex > 0) {
-            selectedColIndex = selectedColIndex - 1;
-            playStage.clearStage();
-            playStage.setPiece(selectedColIndex, currentRowIndex, selectedOrientation, selectedPiece.?);
-        }
-
-        if (currentSecondsPassed > prevSecondsPassed) {
-            prevSecondsPassed = currentSecondsPassed;
-
-            if (currentRowIndex < PlayStage.rowCount - 4) {
-                currentRowIndex = currentRowIndex + 1;
-                playStage.clearStage();
-                playStage.setPiece(selectedColIndex, currentRowIndex, selectedOrientation, selectedPiece.?);
-            }
-        }
+        playStage.update(rl.getFrameTime());
 
         // Draw
         //----------------------------------------------------------------------------------
@@ -92,10 +46,7 @@ pub fn main() !void {
         defer rl.endDrawing();
         rl.clearBackground(rl.Color.black);
 
-        preStage.drawCells();
-        playStage.drawCells();
-        preStage.drawGridLines();
-        playStage.drawGridLines();
+        playStage.draw();
 
         var time_str_buf: [128]u8 = undefined;
         var buf_str_slice: [:0]u8 = try std.fmt.bufPrintZ(&time_str_buf, "Time: {d}", .{currentSecondsPassed});
